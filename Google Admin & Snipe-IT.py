@@ -157,7 +157,7 @@ def Update_Cross(CL): #Update Devices from Googe admin to SnipeIT
 			time.sleep(.5)
 			try:
 				snipeitrep=Get_DevBySN(cross["serialNumber"])
-				if snipeitrep['total'] == 0: #Ensure device SN is not in SnipeIT
+				if snipeitrep['messages'] == 'Asset does not exist.': #Ensure device SN is not in SnipeIT
 					if "annotatedAssetId" in cross: #Is there an Asset Tag in Google Admin
 						if cross['annotatedAssetId'] != '': #If the Tag is not Blank in Google Admin make a new device in SnipeIT
 							Make_Dev({
@@ -170,8 +170,8 @@ def Update_Cross(CL): #Update Devices from Googe admin to SnipeIT
 										"model_id": 1,
 										"serial": cross['serialNumber'],
 										"name": cross["model"],
-										"_snipeit_deviceid_4": cross["deviceId"],
-										"_snipeit_autoupdateexpiration_2": datetime.utcfromtimestamp(int(cross["autoUpdateExpiration"])/1000).strftime('%m-%Y')
+										"_snipeit_deviceid_2": cross["deviceId"],
+										"_snipeit_autoupdateexpiration_3": datetime.utcfromtimestamp(int(cross["autoUpdateExpiration"])/1000).strftime('%m-%Y')
 										})
 						else: #If there is a blank Asset Tag in Google Admin
 							NAG=NAG+1 #Report the missing Asset Tag in Goolge
@@ -237,3 +237,4 @@ Update_Cross(Get_All_Cross()) #Update all Google Admin Devices into SnipeIT
 #print(Get_Cross_ID(["BDCNFN3"])) #Print info for a Specific Device by SN from Google Admin
 #print(Set_Ou('Devices',Get_Cross_ID(['2T85YM3']))) #Set Device 2T85YM3 to the OU Devices
 #print(Get_All_Ou()) #Print info for all Devices in Google Admin
+#print(Get_DevBySN("adsf"))

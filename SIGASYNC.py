@@ -15,10 +15,11 @@ from google_auth_oauthlib.flow import InstalledAppFlow
 from google.auth.transport.requests import Request
 
 # Configure Variables
-creds = None
-SCOPES = ['https://www.googleapis.com/auth/admin.directory.device.chromeos']
-url = ''
-api_key = ''
+creds = None 
+SCOPES = keyfile.SCOPES
+customerId = keyfile.customerId
+url = keyfile.url
+api_key = keyfile.api_key
 
 
 ## functions
@@ -95,7 +96,7 @@ def Get_Models(limit=50, offset=0, sort='created_at', order='asc'):
 	return data
 
 def Post_Dev(Tag, status, modelID, name=None):
-	request=service.chromeosdevices().get(customerId='03jujx15', deviceId=ID, projection='FULL')
+	request=service.chromeosdevices().get(customerId=customerId, deviceId=ID, projection='FULL')
 	response=request.execute()
 	return response
 
@@ -108,12 +109,12 @@ def Patch_DevByID(ID, payload):
 	return data
 
 def Get_Cross(ID):
-	request=service.chromeosdevices().get(customerId='03jujx15', deviceId=ID, projection='FULL')
+	request=service.chromeosdevices().get(customerId=customerId, deviceId=ID, projection='FULL')
 	response=request.execute()
 	return response
 
 def Get_All_Cross():
-	request=service.chromeosdevices().list(customerId='03jujx15', orderBy='serialNumber', projection='FULL')
+	request=service.chromeosdevices().list(customerId=customerId, orderBy='serialNumber', projection='FULL')
 	response=request.execute()
 	cross=response.get('chromeosdevices', [])
 	listcros=[]
@@ -140,7 +141,7 @@ def Print_Cross(crosslist):
 
 def Update_Admin(ID, location, asset, user):
 	body={"annotatedLocation": location, "annotatedAssetId": asset, "annotatedUser": user}
-	request=service.chromeosdevices().patch(customerId='03jujx15', deviceId=ID, body=None, projection=None)
+	request=service.chromeosdevices().patch(customerId=customerId, deviceId=ID, body=None, projection=None)
 	response=request.execute()
 	return response
 

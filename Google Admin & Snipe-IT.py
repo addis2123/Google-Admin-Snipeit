@@ -1,25 +1,25 @@
 ## Google Admin & Snipe-IT ##
 ## By: Dylan Addis-Thielen ##
-##                         ##
+##       03/17/2023        ##
 
 import time #To convert times in update life cycle
 import requests #To send and recieve requests from SnipeIT
 import json #Used to format SnipeIT requests
 import pickle #Used to store Google Admin Auth
 import os.path #Used to locate Auth Pickle
+import keyfile #rename 'keyfile (Example).py' to 'keyfile.py' then add your enviroment vairiables
 from datetime import datetime #To convert times in update life cycle
 from tqdm import tqdm #progress Bar
 from googleapiclient.discovery import build #Used to Setup Google Admin Connection
 from google_auth_oauthlib.flow import InstalledAppFlow #Used to auth Google Admin
 from google.auth.transport.requests import Request #Used to get information from Google Admin
 
-# Configure Variables
+# Setup Variables
 creds = None 
-SCOPES = ['https://www.googleapis.com/auth/admin.directory.device.chromeos', 'https://www.googleapis.com/auth/admin.directory.orgunit']
-customerId = '' #This is from Google
-url = '' #URL to SnipeIT Instance
-api_key = '' # this is from SnipeIT
-
+SCOPES = keyfile.SCOPES
+customerId = keyfile.customerId
+url = keyfile.url
+api_key = keyfile.api_key
 
 ## functions
 
@@ -217,6 +217,19 @@ def Update_Cross(CL): #Update Devices from Googe admin to SnipeIT
 	print("Assets Not in Snipe-IT: "+str(NAS))
 	print("Asset Tags Allready in Snipe-IT: "+str(NEX))
 	print("No Asset Tags in Google Admin: "+str(NAG))
+
+def Update_Dev():
+	#Check Device SN in Snipe for matcing Asset Tag
+		#Check if Device is assigned to User in SnipeIT
+		#Check if Cross User matches names
+		#Update User in Google Admin
+		#Move Device in Google Admin to OU
+	#No Match, in snipeIT
+		#Is there a Device with the Asset Tag from Google in SnipeIT
+		#If there is not a match, report the device
+		#If there is a match of Asset Tag
+			#Report back the two devices
+	print("Update Compleat!")
 
 Update_Cross(Get_All_Cross()) #Update all Google Admin Devices into SnipeIT
 #Print_Cross([Get_Cross('1f701cdb-9820-43e5-a28b-db85a45f4cc5')]) #Print info for a Specific Device by Google Admin ID from Google Admin

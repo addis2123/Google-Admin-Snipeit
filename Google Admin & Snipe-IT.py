@@ -52,6 +52,34 @@ def Get_UserByID(ID): #Find a User by there SnipeIT ID#
 	data =  json.loads(requests.request("Get", link, headers=key).text)
 	return data 
 
+def Get_UserBySearch(TERM): #Find Users by information in SnipeIT
+	TERM = TERM.replace('@','%40')
+	TERM = TERM.replace(' ','%20')
+	link = url+'/api/v1/users?search='+TERM
+	key = {"Authorization": "Bearer "+api_key}
+	data =  json.loads(requests.request("Get", link, headers=key).text)
+	return data
+
+def Get_All_Loc(): #Return All Locations in SnipeIT
+	link = url+'/api/v1/locations'
+	key = {"Authorization": "Bearer "+api_key}
+	data =  json.loads(requests.request("Get", link, headers=key).text)
+	return data 
+
+def Get_Loc(NAME): #Return Location with Name
+	NAME = str(NAME)
+	link = url+'/api/v1/locations?name='+NAME
+	key = {"Authorization": "Bearer "+api_key}
+	data =  json.loads(requests.request("Get", link, headers=key).text)
+	return data 
+
+def Make_Loc(NAME): #Make Location NAME
+	##Remember Payload == {}
+	link = url+'/api/v1/locations'
+	key = {"Accept": "application/json", "Authorization": "Bearer "+api_key,"Content-Type": "application/json"}
+	data =  json.loads(requests.request("POST", link, json={'name': NAME}, headers=key).text)
+	return data
+
 def Get_DevByID(ID): #Find a Device by its SnipeIT ID#
 	ID = str(ID)
 	link = url+'/api/v1/hardware/'+ID
@@ -107,14 +135,24 @@ def Get_Cross(ID): #Get Device in Google Admin by DeviceID
 	response=request.execute()
 	return response
 
-def Get_Cross_ID(DL): #Get the Device ID from Google Admin by SN
+def Patch_Cross(ANOLOC, ANOUSR, NOTES, ID): #Update a Device in Google Admin
+	UPDT={
+		"annotatedLocation":ANOLOC,
+		 "annotatedUser":ANOUSR,
+		 "notes":NOTES
+		}
+	request=service.chromeosdevices().patch(customerId = customerId, deviceId=ID, body=UPDT, projection='FULL')
+	response=request.execute()
+	return response
+
+def Get_Cross_ID(SL): #Get the Device ID from Google Admin by SN
 	CL=Get_All_Cross()
 	DIC={}
 	CrossID=[]
 	for cross in tqdm(CL):
 		DIC[cross['serialNumber']] = cross["deviceId"]
-	for Dev in DL:
-		CrossID.append(DIC[Dev])
+	for SN in SL:
+		CrossID.append(DIC[SN])
 	return CrossID
 
 def Get_All_Cross(): #Get all Google Admin Devices
@@ -218,11 +256,11 @@ def Update_Cross(CL): #Update Devices from Googe admin to SnipeIT
 	print("Asset Tags Allready in Snipe-IT: "+str(NEX))
 	print("No Asset Tags in Google Admin: "+str(NAG))
 
-def Update_Dev():
+def Update_Dev(): #Update Devices from SnipeIT to Google Admin
 	#Check Device SN in Snipe for matcing Asset Tag
 		#Check if Device is assigned to User in SnipeIT
-		#Check if Cross User matches names
-		#Update User in Google Admin
+			#Check if Google User matches SnipeIT
+		#Update Device in Google Admin
 		#Move Device in Google Admin to OU
 	#No Match, in snipeIT
 		#Is there a Device with the Asset Tag from Google in SnipeIT
@@ -231,10 +269,10 @@ def Update_Dev():
 			#Report back the two devices
 	print("Update Compleat!")
 
-Update_Cross(Get_All_Cross()) #Update all Google Admin Devices into SnipeIT
+#Update_Cross(Get_All_Cross()) #Update all Google Admin Devices into SnipeIT
 #Print_Cross([Get_Cross('1f701cdb-9820-43e5-a28b-db85a45f4cc5')]) #Print info for a Specific Device by Google Admin ID from Google Admin
 #Update_Cross([Get_Cross('2351c373-45df-441a-a0fa-9e4e10a14391')]) #Update a specific Device from Google Admin into SnipeIT
 #print(Get_Cross_ID(["BDCNFN3"])) #Print info for a Specific Device by SN from Google Admin
 #print(Set_Ou('Devices',Get_Cross_ID(['2T85YM3']))) #Set Device 2T85YM3 to the OU Devices
 #print(Get_All_Ou()) #Print info for all Devices in Google Admin
-#print(Get_DevBySN("adsf"))
+#print(Get_DevBySN("BDCNFN3"))

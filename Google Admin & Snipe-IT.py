@@ -2,6 +2,7 @@
 ## By: Dylan Addis-Thielen ##
 ##       03/17/2023        ##
 
+from cmath import exp
 import time #To convert times in update life cycle
 import requests #To send and recieve requests from SnipeIT
 import json #Used to format SnipeIT requests
@@ -115,6 +116,20 @@ def Make_Dev(payload): #Make a new Device in SnipeIT
 	data =  json.loads(requests.request("POST", link, json=payload, headers=key).text)
 	return data
 
+def Chkout_Dev(ID,USR):
+	##Remember Payload == {}
+	ID=str(ID)
+	USR=str(USR)
+	payload={
+		"checkout_to_type": "user",
+		"status_id": 1,
+		"assigned_user": USR
+		}
+	link = url+'/api/v1/hardware/'+ID+'/checkout'
+	key = {"Authorization": "Bearer "+api_key,"Content-Type": "application/json"}
+	data =  json.loads(requests.request("PATCH", link, json=payload, headers=key).text)
+	return data
+
 def Get_Ou(OrgPath): #Get OU info by OrgPath in Google Admin
 	request=service.orgunits().get(customerId = customerId, orgUnitPath=OrgPath)
 	response=request.execute()
@@ -208,9 +223,11 @@ def Update_Cross(CL): #Update Devices from Googe admin to SnipeIT
 										"model_id": 1,
 										"serial": cross['serialNumber'],
 										"name": cross["model"],
-										"_snipeit_deviceid_2": cross["deviceId"],
 										"_snipeit_autoupdateexpiration_3": datetime.utcfromtimestamp(int(cross["autoUpdateExpiration"])/1000).strftime('%m-%Y')
 										})
+							#Checkout Device to User in cross['annotatedUser']
+								##Locate Devie ID in SnipeIT
+								##Locate User ID in SnipeIT
 						else: #If there is a blank Asset Tag in Google Admin
 							NAG=NAG+1 #Report the missing Asset Tag in Goolge
 					else: #If there is no Asset Tag in Google Admin
@@ -224,8 +241,10 @@ def Update_Cross(CL): #Update Devices from Googe admin to SnipeIT
 							if scross['asset_tag'] == cross['annotatedAssetId']: #Do the Asset Tags match in Google Admin and SnipeIT
 								Patch_DevByID(scross['id'], { #If SN and Asset Tag Match, Update Device info
 									"name": cross["model"],
-									"_snipeit_deviceid_4": cross["deviceId"],
 									"_snipeit_autoupdateexpiration_2": datetime.utcfromtimestamp(int(cross["autoUpdateExpiration"])/1000).strftime('%m-%Y')})
+								##Checkout Device to User in cross['annotatedUser']
+									##Locate Devie ID in SnipeIT
+									##Locate User ID in SnipeIT
 								MACH = MACH+1 #Report the Device has been updated
 								pass
 							else: #If the Tags Do not match
@@ -236,8 +255,10 @@ def Update_Cross(CL): #Update Devices from Googe admin to SnipeIT
 											"asset_tag": cross['annotatedAssetId'],
 											"serial": cross['serialNumber'],
 											"name": cross["model"],
-											"_snipeit_deviceid_4": cross["deviceId"],
 											"_snipeit_autoupdateexpiration_2": datetime.utcfromtimestamp(int(cross["autoUpdateExpiration"])/1000).strftime('%m-%Y')})
+										##Checkout Device to User in cross['annotatedUser']
+											##Locate Devie ID in SnipeIT
+											##Locate User ID in SnipeIT
 										UPD=UPD+1 #Report an updated device in SnipeIT
 										pass
 								else:
@@ -256,7 +277,47 @@ def Update_Cross(CL): #Update Devices from Googe admin to SnipeIT
 	print("Asset Tags Allready in Snipe-IT: "+str(NEX))
 	print("No Asset Tags in Google Admin: "+str(NAG))
 
-def Update_Dev(): #Update Devices from SnipeIT to Google Admin
+def Update_Dev(CL): #Update Devices from SnipeIT to Google Admin
+	#Setup Reporter Vairiables
+	NEX=0
+	for cross in tqdm(CL):
+		for attempt in range(4): #Try 4 Times per device
+			time.sleep(.5)
+			try:
+				snipeitrep=Get_DevBySN(cross["serialNumber"]) #Get Device From SnipeIT with SN
+				if snipeitrep["total"] == 1: #Ensure only one SN is in SnipeIT
+					if cross['annotatedAssetId'] == snipeitrep['rows']['asset_tag']: #Ensure the Asset Tags Match
+						try: #Try updating all information
+							Patch_Cross(
+								snipeitrep['rows']['location']['name'], 
+								snipeitrep['rows']['assigned_to']['email'], 
+								snipeitrep['rows']['notes'], 
+								cross['deviceId'] 
+								)
+							Set_Ou(
+								snipeitrep['rows']['location']['name'],
+								cross['deviceId']
+								)
+						except:
+							try: #Try updating minimal information
+								Patch_Cross(
+									snipeitrep['rows']['location']['name'], 
+									'NA', 
+									snipeitrep['rows']['notes'], 
+									cross['deviceId'] 
+									)
+							except: #Update Failed due to one or more missing fields. Placing Device in root OU
+								Set_Ou('/', cross['deviceId'])
+					else: #Asset Tags do not match
+						NEX=NEX+1 #Report the missing Asset Tag in Google
+					pass
+				else: #Device is not in SnipeIT or More than one with SN
+					#Report the Error
+					pass
+			except: #There was an error locating the Device
+				time.sleep(15)
+			else:
+				break
 	#Check Device SN in Snipe for matcing Asset Tag
 		#Check if Device is assigned to User in SnipeIT
 			#Check if Google User matches SnipeIT

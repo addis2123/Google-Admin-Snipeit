@@ -2,7 +2,6 @@
 ## By: Dylan Addis-Thielen ##
 ##       03/17/2023        ##
 
-from cmath import exp
 import time #To convert times in update life cycle
 import requests #To send and recieve requests from SnipeIT
 import json #Used to format SnipeIT requests
@@ -15,6 +14,7 @@ from googleapiclient.discovery import build #Used to Setup Google Admin Connecti
 from google_auth_oauthlib.flow import InstalledAppFlow #Used to auth Google Admin
 from google.auth.transport.requests import Request #Used to get information from Google Admin
 
+
 # Setup Variables
 creds = None 
 SCOPES = keyfile.SCOPES
@@ -22,9 +22,6 @@ customerId = keyfile.COSTID
 url = keyfile.URL
 api_key = keyfile.API_KEY
 AUED=keyfile.AUED
-
-## functions
-
 
 
 # The file token.pickle stores the user's access and refresh tokens, and is
@@ -34,7 +31,10 @@ AUED=keyfile.AUED
 if os.path.exists('token.pickle'):
     with open('token.pickle', 'rb') as token:
         creds = pickle.load(token)
+
+
 # If there are no (valid) credentials available, let the user log in.
+
 if not creds or not creds.valid:
     if creds and creds.expired and creds.refresh_token:
         creds.refresh(Request())
@@ -46,6 +46,9 @@ if not creds or not creds.valid:
     with open('token.pickle', 'wb') as token:
         pickle.dump(creds, token)
 service = build('admin', 'directory_v1', credentials=creds)
+
+
+## functions
 
 def Get_UserByID(ID): #Find a User by there SnipeIT ID#
 	ID = str(ID)
@@ -236,6 +239,8 @@ def Update_Cross(CL): #Update Devices from Googe admin to SnipeIT
 							NAG=NAG+1 #Report the missing Asset Tag in Google
 						NAS = NAS+1 #Report a missing Device in SnipeIT
 						pass
+					else:
+						print(snipeitrep['messages'])
 				else: #SN is in SnipeIT
 					if "annotatedAssetId" in cross: #Is there an Asset Tag in Google Admin
 						if cross['annotatedAssetId'] != '': #Is that tag Blank

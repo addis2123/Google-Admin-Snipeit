@@ -18,9 +18,10 @@ from google.auth.transport.requests import Request #Used to get information from
 # Setup Variables
 creds = None 
 SCOPES = keyfile.SCOPES
-customerId = keyfile.customerId
-url = keyfile.url
-api_key = keyfile.api_key
+customerId = keyfile.COSTID
+url = keyfile.URL
+api_key = keyfile.API_KEY
+AUED=keyfile.AUED
 
 ## functions
 
@@ -207,33 +208,34 @@ def Update_Cross(CL): #Update Devices from Googe admin to SnipeIT
 	MACH=0
 	for cross in tqdm(CL):
 		for attempt in range(4): #Try 4 Times per device
-			time.sleep(.5)
+			#time.sleep(.5)
 			try:
 				snipeitrep=Get_DevBySN(cross["serialNumber"])
-				if snipeitrep['messages'] == 'Asset does not exist.': #Ensure device SN is not in SnipeIT
-					if "annotatedAssetId" in cross: #Is there an Asset Tag in Google Admin
-						if cross['annotatedAssetId'] != '': #If the Tag is not Blank in Google Admin make a new device in SnipeIT
-							Make_Dev({
-										"archived": False,
-										"depreciate": False,
-										"requestable": False,
-										"last_audit_date": "null",
-										"asset_tag": cross['annotatedAssetId'],
-										"status_id": 1,
-										"model_id": 1,
-										"serial": cross['serialNumber'],
-										"name": cross["model"],
-										"_snipeit_autoupdateexpiration_3": datetime.utcfromtimestamp(int(cross["autoUpdateExpiration"])/1000).strftime('%m-%Y')
-										})
-							#Checkout Device to User in cross['annotatedUser']
-								##Locate Devie ID in SnipeIT
-								##Locate User ID in SnipeIT
-						else: #If there is a blank Asset Tag in Google Admin
-							NAG=NAG+1 #Report the missing Asset Tag in Goolge
-					else: #If there is no Asset Tag in Google Admin
-						NAG=NAG+1 #Report the missing Asset Tag in Google
-					NAS = NAS+1 #Report a missing Device in SnipeIT
-					pass
+				if 'messages' in snipeitrep:
+					if snipeitrep['messages'] == 'Asset does not exist.': #Ensure device SN is not in SnipeIT
+						if "annotatedAssetId" in cross: #Is there an Asset Tag in Google Admin
+							if cross['annotatedAssetId'] != '': #If the Tag is not Blank in Google Admin make a new device in SnipeIT
+								Make_Dev({
+											"archived": False,
+											"depreciate": False,
+											"requestable": False,
+											"last_audit_date": "null",
+											"asset_tag": cross['annotatedAssetId'],
+											"status_id": 1,
+											"model_id": 1,
+											"serial": cross['serialNumber'],
+											"name": cross["model"],
+											AUED: datetime.utcfromtimestamp(int(cross["autoUpdateExpiration"])/1000).strftime('%m-%Y')
+											})
+								#Checkout Device to User in cross['annotatedUser']
+									##Locate Devie ID in SnipeIT
+									##Locate User ID in SnipeIT
+							else: #If there is a blank Asset Tag in Google Admin
+								NAG=NAG+1 #Report the missing Asset Tag in Goolge
+						else: #If there is no Asset Tag in Google Admin
+							NAG=NAG+1 #Report the missing Asset Tag in Google
+						NAS = NAS+1 #Report a missing Device in SnipeIT
+						pass
 				else: #SN is in SnipeIT
 					if "annotatedAssetId" in cross: #Is there an Asset Tag in Google Admin
 						if cross['annotatedAssetId'] != '': #Is that tag Blank
@@ -241,7 +243,7 @@ def Update_Cross(CL): #Update Devices from Googe admin to SnipeIT
 							if scross['asset_tag'] == cross['annotatedAssetId']: #Do the Asset Tags match in Google Admin and SnipeIT
 								Patch_DevByID(scross['id'], { #If SN and Asset Tag Match, Update Device info
 									"name": cross["model"],
-									"_snipeit_autoupdateexpiration_2": datetime.utcfromtimestamp(int(cross["autoUpdateExpiration"])/1000).strftime('%m-%Y')})
+									AUED: datetime.utcfromtimestamp(int(cross["autoUpdateExpiration"])/1000).strftime('%m-%Y')})
 								##Checkout Device to User in cross['annotatedUser']
 									##Locate Devie ID in SnipeIT
 									##Locate User ID in SnipeIT
@@ -254,8 +256,8 @@ def Update_Cross(CL): #Update Devices from Googe admin to SnipeIT
 										Patch_DevByID(scross['id'], { #Update Devie in SnipeIT with the new Asset Tag
 											"asset_tag": cross['annotatedAssetId'],
 											"serial": cross['serialNumber'],
-											"name": cross["model"],
-											"_snipeit_autoupdateexpiration_2": datetime.utcfromtimestamp(int(cross["autoUpdateExpiration"])/1000).strftime('%m-%Y')})
+											"name": cross['model'],
+											AUED: datetime.utcfromtimestamp(int(cross['autoUpdateExpiration'])/1000).strftime('%m-%Y')})
 										##Checkout Device to User in cross['annotatedUser']
 											##Locate Devie ID in SnipeIT
 											##Locate User ID in SnipeIT
@@ -268,6 +270,8 @@ def Update_Cross(CL): #Update Devices from Googe admin to SnipeIT
 					else:
 						NAG=NAG+1 #Report Missing Tag in Goolge Admin
 			except: #There was an error in updating this device
+				print(snipeitrep)
+				print(cross)
 				time.sleep(15)
 			else:
 				break
@@ -282,7 +286,7 @@ def Update_Dev(CL): #Update Devices from SnipeIT to Google Admin
 	NEX=0
 	for cross in tqdm(CL):
 		for attempt in range(4): #Try 4 Times per device
-			time.sleep(.5)
+			#time.sleep(.5)
 			try:
 				snipeitrep=Get_DevBySN(cross["serialNumber"]) #Get Device From SnipeIT with SN
 				if snipeitrep["total"] == 1: #Ensure only one SN is in SnipeIT
@@ -330,7 +334,7 @@ def Update_Dev(CL): #Update Devices from SnipeIT to Google Admin
 			#Report back the two devices
 	print("Update Compleat!")
 
-#Update_Cross(Get_All_Cross()) #Update all Google Admin Devices into SnipeIT
+Update_Cross(Get_All_Cross()) #Update all Google Admin Devices into SnipeIT
 #Print_Cross([Get_Cross('1f701cdb-9820-43e5-a28b-db85a45f4cc5')]) #Print info for a Specific Device by Google Admin ID from Google Admin
 #Update_Cross([Get_Cross('2351c373-45df-441a-a0fa-9e4e10a14391')]) #Update a specific Device from Google Admin into SnipeIT
 #print(Get_Cross_ID(["BDCNFN3"])) #Print info for a Specific Device by SN from Google Admin

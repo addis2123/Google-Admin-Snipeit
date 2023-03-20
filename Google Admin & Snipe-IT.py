@@ -7,6 +7,7 @@ import requests #To send and recieve requests from SnipeIT
 import json #Used to format SnipeIT requests
 import pickle #Used to store Google Admin Auth
 import os.path #Used to locate Auth Pickle
+import cProfile
 import keyfile #rename 'keyfile (Example).py' to 'keyfile.py' then add your enviroment vairiables
 from datetime import datetime #To convert times in update life cycle
 from tqdm import tqdm #progress Bar
@@ -22,7 +23,7 @@ customerId = keyfile.COSTID
 url = keyfile.URL
 api_key = keyfile.API_KEY
 AUED=keyfile.AUED
-
+model_id = keyfile.CHRMOD
 
 # The file token.pickle stores the user's access and refresh tokens, and is
 # created automatically when the authorization flow completes for the first
@@ -120,18 +121,27 @@ def Make_Dev(payload): #Make a new Device in SnipeIT
 	data =  json.loads(requests.request("POST", link, json=payload, headers=key).text)
 	return data
 
+def Chkin_Dev(ID):
+	##Remember Payload == {}
+	ID=str(ID)
+	payload={"status_id": 11}
+	link = url+'/api/v1/hardware/'+ID+'/checkin'
+	key = {"Accept": "application/json", "Authorization": "Bearer "+api_key,"Content-Type": "application/json"}
+	data =  json.loads(requests.request("POST", link, json=payload, headers=key).text)
+	return data
+
 def Chkout_Dev(ID,USR):
 	##Remember Payload == {}
 	ID=str(ID) #Must be the DeviceID in SnipeIT
-	USR=str(USR) #Must be the UserID in SnipeIT
+	USR=int(USR) #Must be the UserID in SnipeIT
 	payload={
 		"checkout_to_type": "user",
-		"status_id": 1,
+		"status_id": 11,
 		"assigned_user": USR
 		}
 	link = url+'/api/v1/hardware/'+ID+'/checkout'
-	key = {"Authorization": "Bearer "+api_key,"Content-Type": "application/json"}
-	data =  json.loads(requests.request("PATCH", link, json=payload, headers=key).text)
+	key = {"Accept": "application/json", "Authorization": "Bearer "+api_key,"Content-Type": "application/json"}
+	data =  json.loads(requests.request("POST", link, json=payload, headers=key).text)
 	return data
 
 def Get_Ou(OrgPath): #Get OU info by OrgPath in Google Admin
@@ -225,7 +235,7 @@ def Update_Cross(CL): #Update Devices from Googe admin to SnipeIT
 											"last_audit_date": "null",
 											"asset_tag": cross['annotatedAssetId'],
 											"status_id": 1,
-											"model_id": 1,
+											"model_id": model_id,
 											"serial": cross['serialNumber'],
 											"name": cross["model"],
 											AUED: datetime.utcfromtimestamp(int(cross["autoUpdateExpiration"])/1000).strftime('%m-%Y')
@@ -256,12 +266,15 @@ def Update_Cross(CL): #Update Devices from Googe admin to SnipeIT
 							if scross['asset_tag'] == cross['annotatedAssetId']: #Do the Asset Tags match in Google Admin and SnipeIT
 								Patch_DevByID(scross['id'], { #If SN and Asset Tag Match, Update Device info
 									"name": cross["model"],
+									"model_id": model_id,
+									"status_id": 11,
 									AUED: datetime.utcfromtimestamp(int(cross["autoUpdateExpiration"])/1000).strftime('%m-%Y')})
 								
 								if 'annotatedUser' in cross: #Check for User
 									if cross['annotatedUser'] != '': #Is User blank?
 										dev = Get_DevByTag(cross['annotatedAssetId'])
 										usr = Get_UserBySearch(cross['annotatedUser'])
+										Chkin_Dev(dev['rows'][0]['id'])
 										Chkout_Dev( #Checkout Device to User in cross['annotatedUser']
 											dev['rows'][0]['id'], ##Locate Devie ID in SnipeIT
 											usr['rows'][0]['id'] ##Locate User ID in SnipeIT
@@ -278,6 +291,8 @@ def Update_Cross(CL): #Update Devices from Googe admin to SnipeIT
 											"asset_tag": cross['annotatedAssetId'],
 											"serial": cross['serialNumber'],
 											"name": cross['model'],
+											"model_id": model_id,
+											"status_id": 11,
 											AUED: datetime.utcfromtimestamp(int(cross['autoUpdateExpiration'])/1000).strftime('%m-%Y')})
 
 										if 'annotatedUser' in cross: #Check for User
@@ -298,10 +313,12 @@ def Update_Cross(CL): #Update Devices from Googe admin to SnipeIT
 							NAG=NAG+1 #Report Blank Tag in Google Admin
 					else:
 						NAG=NAG+1 #Report Missing Tag in Goolge Admin
-			except: #There was an error in updating this device
+			except Exception as e: #There was an error in updating this device
+				print(e)
+				print("SnipeIT Device:")
 				print(snipeitrep)
+				print("Chrome Device:")
 				print(cross)
-				time.sleep(15)
 			else:
 				break
 	print("Update Compleat!")
@@ -363,10 +380,11 @@ def Update_Dev(CL): #Update Devices from SnipeIT to Google Admin
 			#Report back the two devices
 	print("Update Compleat!")
 
-Update_Cross(Get_All_Cross()) #Update all Google Admin Devices into SnipeIT
+#Update_Cross(Get_All_Cross()) #Update all Google Admin Devices into SnipeIT
 #Print_Cross([Get_Cross('1f701cdb-9820-43e5-a28b-db85a45f4cc5')]) #Print info for a Specific Device by Google Admin ID from Google Admin
 #Update_Cross([Get_Cross('2351c373-45df-441a-a0fa-9e4e10a14391')]) #Update a specific Device from Google Admin into SnipeIT
 #print(Get_Cross_ID(["BDCNFN3"])) #Print info for a Specific Device by SN from Google Admin
 #print(Set_Ou('Devices',Get_Cross_ID(['2T85YM3']))) #Set Device 2T85YM3 to the OU Devices
 #print(Get_All_Ou()) #Print info for all Devices in Google Admin
 #print(Get_DevBySN("BDCNFN3"))
+cProfile.run("Update_Cross([Get_Cross('cd6e204c-5909-47c9-a046-e1b6f333467f')])")

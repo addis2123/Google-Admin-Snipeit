@@ -10,3 +10,5 @@ AUED = ""
 API_KEY = '' 
 # Modle ID in SnipeIT
 CHRMOD = '' 
+# Status to use for all synced devices
+STATESN = ''

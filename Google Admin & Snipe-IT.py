@@ -24,6 +24,7 @@ url = keyfile.URL
 api_key = keyfile.API_KEY
 AUED=keyfile.AUED
 model_id = keyfile.CHRMOD
+Asset_State = keyfile.STATESN
 
 # The file token.pickle stores the user's access and refresh tokens, and is
 # created automatically when the authorization flow completes for the first
@@ -124,7 +125,7 @@ def Make_Dev(payload): #Make a new Device in SnipeIT
 def Chkin_Dev(ID):
 	##Remember Payload == {}
 	ID=str(ID)
-	payload={"status_id": 11}
+	payload={"status_id": Asset_State}
 	link = url+'/api/v1/hardware/'+ID+'/checkin'
 	key = {"Accept": "application/json", "Authorization": "Bearer "+api_key,"Content-Type": "application/json"}
 	data =  json.loads(requests.request("POST", link, json=payload, headers=key).text)
@@ -136,7 +137,7 @@ def Chkout_Dev(ID,USR):
 	USR=int(USR) #Must be the UserID in SnipeIT
 	payload={
 		"checkout_to_type": "user",
-		"status_id": 11,
+		"status_id": Asset_State,
 		"assigned_user": USR
 		}
 	link = url+'/api/v1/hardware/'+ID+'/checkout'
@@ -221,7 +222,7 @@ def Update_Cross(CL): #Update Devices from Googe admin to SnipeIT
 	MACH=0
 	for cross in tqdm(CL):
 		for attempt in range(4): #Try 4 Times per device
-			#time.sleep(.5)
+			time.sleep(.5)
 			try:
 				snipeitrep=Get_DevBySN(cross["serialNumber"]) #Check SnipeIT
 				if 'messages' in snipeitrep: #Is there a message
@@ -234,7 +235,7 @@ def Update_Cross(CL): #Update Devices from Googe admin to SnipeIT
 											"requestable": False,
 											"last_audit_date": "null",
 											"asset_tag": cross['annotatedAssetId'],
-											"status_id": 1,
+											"status_id": Asset_State,
 											"model_id": model_id,
 											"serial": cross['serialNumber'],
 											"name": cross["model"],
@@ -267,7 +268,7 @@ def Update_Cross(CL): #Update Devices from Googe admin to SnipeIT
 								Patch_DevByID(scross['id'], { #If SN and Asset Tag Match, Update Device info
 									"name": cross["model"],
 									"model_id": model_id,
-									"status_id": 11,
+									"status_id": Asset_State,
 									AUED: datetime.utcfromtimestamp(int(cross["autoUpdateExpiration"])/1000).strftime('%m-%Y')})
 								
 								if 'annotatedUser' in cross: #Check for User
@@ -292,7 +293,7 @@ def Update_Cross(CL): #Update Devices from Googe admin to SnipeIT
 											"serial": cross['serialNumber'],
 											"name": cross['model'],
 											"model_id": model_id,
-											"status_id": 11,
+											"status_id": Asset_State,
 											AUED: datetime.utcfromtimestamp(int(cross['autoUpdateExpiration'])/1000).strftime('%m-%Y')})
 
 										if 'annotatedUser' in cross: #Check for User
@@ -313,12 +314,8 @@ def Update_Cross(CL): #Update Devices from Googe admin to SnipeIT
 							NAG=NAG+1 #Report Blank Tag in Google Admin
 					else:
 						NAG=NAG+1 #Report Missing Tag in Goolge Admin
-			except Exception as e: #There was an error in updating this device
-				print(e)
-				print("SnipeIT Device:")
-				print(snipeitrep)
-				print("Chrome Device:")
-				print(cross)
+			except: #There was an error in updating this device
+				time.sleep(.5)
 			else:
 				break
 	print("Update Compleat!")
@@ -382,9 +379,9 @@ def Update_Dev(CL): #Update Devices from SnipeIT to Google Admin
 
 #Update_Cross(Get_All_Cross()) #Update all Google Admin Devices into SnipeIT
 #Print_Cross([Get_Cross('1f701cdb-9820-43e5-a28b-db85a45f4cc5')]) #Print info for a Specific Device by Google Admin ID from Google Admin
-#Update_Cross([Get_Cross('2351c373-45df-441a-a0fa-9e4e10a14391')]) #Update a specific Device from Google Admin into SnipeIT
+#Update_Cross([Get_Cross('f062e6db-576f-4482-8b4a-4365c912a113')]) #Update a specific Device from Google Admin into SnipeIT
 #print(Get_Cross_ID(["BDCNFN3"])) #Print info for a Specific Device by SN from Google Admin
 #print(Set_Ou('Devices',Get_Cross_ID(['2T85YM3']))) #Set Device 2T85YM3 to the OU Devices
 #print(Get_All_Ou()) #Print info for all Devices in Google Admin
 #print(Get_DevBySN("BDCNFN3"))
-cProfile.run("Update_Cross([Get_Cross('cd6e204c-5909-47c9-a046-e1b6f333467f')])")
+cProfile.run("Update_Cross(Get_All_Cross())")

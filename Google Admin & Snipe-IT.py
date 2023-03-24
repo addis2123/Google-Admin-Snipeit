@@ -2,6 +2,7 @@
 ## By: Dylan Addis-Thielen ##
 ##       03/17/2023        ##
 
+import csv # To do a CSV Import to Google Admin.
 import time #To convert times in update life cycle
 import requests #To send and recieve requests from SnipeIT
 import json #Used to format SnipeIT requests
@@ -165,15 +166,25 @@ def Get_Cross(ID): #Get Device in Google Admin by DeviceID
 	response=request.execute()
 	return response
 
-def Patch_Cross(ANOLOC, ANOUSR, NOTES, ID): #Update a Device in Google Admin
+def Patch_Cross(ANOLOC, ANOUSR, NOTES, ASSET, ID): #Update a Device in Google Admin
 	UPDT={
 		"annotatedLocation":ANOLOC,
 		 "annotatedUser":ANOUSR,
-		 "notes":NOTES
+		 "notes":NOTES,
+		 "annotatedAssetId":ASSET
 		}
 	request=service.chromeosdevices().patch(customerId = customerId, deviceId=ID, body=UPDT, projection='FULL')
 	response=request.execute()
 	return response
+
+def Update_G_Csv(CSV): # Using CSV, Update chromebooks in Google Admin CSV must have data in order (Anotated Location, Anotated User, Notes, Annotated Asset ID, Device ID)
+	with open(CSV, mode ='r')as file: # Get the CSV File
+		csvFile = csv.reader(file) # Read the CSV File
+		for lines in tqdm(csvFile): # Read the data one line at a time
+			try:
+				Patch_Cross(lines[0], lines[1], lines[2], lines[3], lines[4]) #Update all fields based on the CSV. 
+			except:
+				print(lines) # Print the lines that failed.
 
 def Get_Cross_ID(SL): #Get the Device ID from Google Admin by SN
 	CL=Get_All_Cross()
@@ -221,8 +232,7 @@ def Update_Cross(CL): #Update Devices from Googe admin to SnipeIT
 	UPD=0
 	MACH=0
 	for cross in tqdm(CL):
-		for attempt in range(4): #Try 4 Times per device
-			time.sleep(.5)
+		for attempt in range(2): #Try 4 Times per device
 			try:
 				snipeitrep=Get_DevBySN(cross["serialNumber"]) #Check SnipeIT
 				if 'messages' in snipeitrep: #Is there a message
@@ -315,7 +325,7 @@ def Update_Cross(CL): #Update Devices from Googe admin to SnipeIT
 					else:
 						NAG=NAG+1 #Report Missing Tag in Goolge Admin
 			except: #There was an error in updating this device
-				time.sleep(.5)
+				time.sleep(30)
 			else:
 				break
 	print("Update Compleat!")
@@ -377,11 +387,12 @@ def Update_Dev(CL): #Update Devices from SnipeIT to Google Admin
 			#Report back the two devices
 	print("Update Compleat!")
 
-#Update_Cross(Get_All_Cross()) #Update all Google Admin Devices into SnipeIT
+Update_Cross(Get_All_Cross()) #Update all Google Admin Devices into SnipeIT
 #Print_Cross([Get_Cross('1f701cdb-9820-43e5-a28b-db85a45f4cc5')]) #Print info for a Specific Device by Google Admin ID from Google Admin
-#Update_Cross([Get_Cross('f062e6db-576f-4482-8b4a-4365c912a113')]) #Update a specific Device from Google Admin into SnipeIT
+#Update_Cross([Get_Cross('6daa5cb0-4942-43cf-927e-0068e33090a6')]) #Update a specific Device from Google Admin into SnipeIT
 #print(Get_Cross_ID(["BDCNFN3"])) #Print info for a Specific Device by SN from Google Admin
 #print(Set_Ou('Devices',Get_Cross_ID(['2T85YM3']))) #Set Device 2T85YM3 to the OU Devices
 #print(Get_All_Ou()) #Print info for all Devices in Google Admin
 #print(Get_DevBySN("BDCNFN3"))
-cProfile.run("Update_Cross(Get_All_Cross())")
+#cProfile.run("Update_Cross(Get_All_Cross())")
+

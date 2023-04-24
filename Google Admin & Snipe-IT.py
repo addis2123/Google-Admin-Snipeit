@@ -231,6 +231,7 @@ def Update_Cross(CL): #Update Devices from Googe admin to SnipeIT
 	NAG=0
 	UPD=0
 	MACH=0
+	ERR=[]
 	for cross in tqdm(CL):
 		for attempt in range(2): #Try 4 Times per device
 			try:
@@ -324,8 +325,11 @@ def Update_Cross(CL): #Update Devices from Googe admin to SnipeIT
 							NAG=NAG+1 #Report Blank Tag in Google Admin
 					else:
 						NAG=NAG+1 #Report Missing Tag in Goolge Admin
-			except: #There was an error in updating this device
-				time.sleep(30)
+			except Exception as e: #There was an error in updating this device
+				if e == 'list index out of range':
+					ERR=ERR+cross
+					pass
+				#time.sleep(60) #API Reset timer
 			else:
 				break
 	print("Update Compleat!")
@@ -333,6 +337,7 @@ def Update_Cross(CL): #Update Devices from Googe admin to SnipeIT
 	print("Assets Not in Snipe-IT: "+str(NAS))
 	print("Asset Tags Allready in Snipe-IT: "+str(NEX))
 	print("No Asset Tags in Google Admin: "+str(NAG))
+	print("Errored devices "+ERR)
 
 def Update_Dev(CL): #Update Devices from SnipeIT to Google Admin
 	#Setup Reporter Vairiables

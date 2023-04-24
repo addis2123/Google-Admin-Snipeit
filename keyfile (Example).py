@@ -5,7 +5,7 @@ COSTID = ''
 # URL to SnipeIT Instance
 URL = '' 
 # Field for the update experation date
-AUED = "" 
+AUED = '' 
 # this is from SnipeIT
 API_KEY = '' 
 # Modle ID in SnipeIT

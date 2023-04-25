@@ -1,4 +1,14 @@
-SCOPES = ['https://www.googleapis.com/auth/admin.directory.device.chromeos', 'https://www.googleapis.com/auth/admin.directory.orgunit'] #Used to set permisions for Google Admin API access
-customerId = '' #This is from Google
-url = '' #URL to SnipeIT Instance
-api_key = '' # this is from SnipeIT
+# Used to set permisions for Google Admin API access
+SCOPES = ['https://www.googleapis.com/auth/admin.directory.device.chromeos', 'https://www.googleapis.com/auth/admin.directory.orgunit'] 
+# This is from Google
+COSTID = '' 
+# URL to SnipeIT Instance
+URL = '' 
+# Field for the update experation date
+AUED = '' 
+# this is from SnipeIT
+API_KEY = '' 
+# Modle ID in SnipeIT
+CHRMOD = '' 
+# Status to use for all synced devices
+STATESN = ''
